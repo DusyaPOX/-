@@ -1,0 +1,12 @@
+{
+  "name": "opisis-interactive-course",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Интерактивный курс ОПИСиС для дистанционного обучения",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check app.js && node --check lesson-model.js && node --test tests/*.test.cjs"
+  },
+  "engines": { "node": ">=18" }
+}
