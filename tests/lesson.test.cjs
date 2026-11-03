@@ -57,6 +57,29 @@ test('внутренние якоря, идентификаторы раздел
   for (const chapter of M.chapters) assert.ok(ids.includes(chapter));
   for (const match of html.matchAll(/(?:src|href)="([^"#][^"]+)"/g)) {
     if (/^https?:/.test(match[1])) continue;
-    assert.ok(fs.existsSync(path.join(__dirname, '..', match[1])), `Отсутствует ресурс ${match[1]}`);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', match[1].split(/[?#]/)[0])), `Отсутствует ресурс ${match[1]}`);
   }
+});
+
+test('переход от отметок разделов к статусу лекции сохраняет ответы', () => {
+  const answers = Object.fromEntries(M.quiz.map((item, i) => [i, item.answer]));
+  const partial = M.restoreProgress({ completed: ['basics'], answers, submitted: true });
+  assert.equal(partial.lessonComplete, false);
+  assert.deepEqual(partial.answers, answers);
+  assert.equal(partial.submitted, true);
+  assert.equal(M.restoreProgress({ completed: M.chapters }).lessonComplete, true);
+  assert.equal(M.restoreProgress({ lessonComplete: false, completed: M.chapters }).lessonComplete, false);
+  assert.equal(M.restoreProgress({ lessonComplete: true }).lessonComplete, true);
+  assert.deepEqual(M.restoreProgress(null), { lessonComplete: false, answers: {}, submitted: false });
+});
+
+test('в лекции одна финальная отметка и краткий словарь из восьми статей', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.equal((html.match(/id="lesson-complete"/g) || []).length, 1);
+  assert.equal(html.includes('data-complete='), false);
+  assert.equal(html.includes('Отметить раздел изученным'), false);
+  assert.equal((html.match(/<dt>/g) || []).length, 8);
+  assert.equal(html.includes('class="glossary abbreviations"'), false);
+  for (const term of ['Бит', 'Символ', 'Кадр / пакет', 'Протокол', 'MAC / IP', 'DL / UL', 'Модуляция', 'Эквализация'])
+    assert.ok(html.includes(`<dt>${term}</dt>`), `Отсутствует статья ${term}`);
 });

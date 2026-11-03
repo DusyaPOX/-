@@ -5,13 +5,43 @@
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
   const chapters = ['basics', 'journey', 'medium', 'layers', 'channel', 'metrics', 'technologies', 'check'];
+  const abbreviations = [
+    { term: 'ОПИСиС', full: 'Основы построения информационных систем и сетей', meaning: 'Название учебной дисциплины.' },
+    { term: 'OSI', full: 'Open Systems Interconnection', meaning: 'Взаимодействие открытых систем; эталонная модель из семи уровней.' },
+    { term: 'TCP/IP', full: 'Transmission Control Protocol / Internet Protocol', meaning: 'Семейство протоколов Интернета, названное по протоколам TCP и IP.' },
+    { term: 'TCP', full: 'Transmission Control Protocol', meaning: 'Протокол управления передачей; обеспечивает надёжный упорядоченный поток байтов.' },
+    { term: 'IP', full: 'Internet Protocol', meaning: 'Межсетевой протокол; обеспечивает адресацию и доставку пакетов между сетями.' },
+    { term: 'UDP', full: 'User Datagram Protocol', meaning: 'Протокол пользовательских дейтаграмм; передаёт отдельные сообщения без гарантии доставки.' },
+    { term: 'MAC', full: 'Media Access Control', meaning: 'Управление доступом к среде; MAC-адрес используется при локальной доставке кадров.' },
+    { term: 'TX', full: 'Transmitter', meaning: 'Передатчик; обозначение передающей стороны.' },
+    { term: 'RX', full: 'Receiver', meaning: 'Приёмник; обозначение принимающей стороны.' },
+    { term: 'HTTP', full: 'Hypertext Transfer Protocol', meaning: 'Протокол передачи гипертекста; используется для обмена запросами и ответами, в том числе в веб-приложениях.' },
+    { term: 'UTF-8', full: '8-bit Unicode Transformation Format', meaning: '8-битный формат преобразования Юникода; представляет символы последовательностями от одного до четырёх байтов.' },
+    { term: 'BER', full: 'Bit Error Rate', meaning: 'Доля ошибочно принятых битов; используется для оценки вероятности битовой ошибки.' },
+    { term: 'BLER', full: 'Block Error Rate', meaning: 'Доля ошибочно принятых блоков; используется для оценки вероятности ошибки блока.' },
+    { term: 'SNR', full: 'Signal-to-Noise Ratio', meaning: 'Отношение мощности полезного сигнала к мощности шума.' },
+    { term: 'SINR', full: 'Signal-to-Interference-plus-Noise Ratio', meaning: 'Отношение мощности полезного сигнала к суммарной мощности интерференции и шума.' },
+    { term: 'АБГШ', full: 'Аддитивный белый гауссовский шум', meaning: 'Модель шума, который добавляется к сигналу, имеет постоянную спектральную плотность мощности в рассматриваемой полосе и гауссовское распределение отсчётов.' },
+    { term: 'OFDM', full: 'Orthogonal Frequency-Division Multiplexing', meaning: 'Мультиплексирование с ортогональным частотным разделением; параллельная передача на ортогональных поднесущих.' },
+    { term: 'MIMO', full: 'Multiple-Input Multiple-Output', meaning: 'Множественный вход — множественный выход; использование нескольких передающих и приёмных антенн.' },
+    { term: 'LTE', full: 'Long Term Evolution', meaning: 'Долгосрочное развитие; название семейства технологий сотовой связи.' },
+    { term: '5G', full: 'Fifth Generation', meaning: 'Пятое поколение систем мобильной связи.' },
+    { term: 'NOMA', full: 'Non-Orthogonal Multiple Access', meaning: 'Неортогональный множественный доступ; пользователи могут совместно использовать одни и те же ресурсы передачи.' },
+    { term: 'RSMA', full: 'Rate-Splitting Multiple Access', meaning: 'Множественный доступ с разделением сообщений на общую и частные части.' },
+    { term: 'DL', full: 'Downlink', meaning: 'Нисходящее направление: от базовой станции к устройству.' },
+    { term: 'UL', full: 'Uplink', meaning: 'Восходящее направление: от устройства к базовой станции.' },
+    { term: 'PDF', full: 'Portable Document Format', meaning: 'Переносимый формат документов; используется при сохранении печатной версии лекции.' },
+    { term: 'ITU-T', full: 'International Telecommunication Union — Telecommunication Standardization Sector', meaning: 'Сектор стандартизации электросвязи Международного союза электросвязи.' },
+    { term: 'RFC', full: 'Request for Comments', meaning: 'Запрос комментариев; название серии технических документов, в том числе спецификаций интернет-протоколов.' },
+    { term: 'Wi-Fi', full: 'Название технологий беспроводной локальной связи', meaning: 'Торговое наименование, а не аббревиатура с обязательной побуквенной расшифровкой.' }
+  ];
   const layers = [
-    { n: 7, name: 'Прикладной', short: 'Контекст', purpose: 'Предоставляет сетевые функции приложениям: запрос страницы, отправка сообщения, получение файла. Здесь определяется смысл обмена для пользователя.', example: 'Приложение отправляет HTTP-запрос учебному серверу.', tcpip: 'Прикладной', unit: 'Данные приложения' },
-    { n: 6, name: 'Представления', short: 'Контекст', purpose: 'Отвечает за форму представления данных: кодирование, преобразование форматов, согласование синтаксиса. Шифрование и сжатие часто объясняют через функции этого уровня.', example: 'Текст кодируется в UTF-8, изображение — в выбранном формате. В TCP/IP эти задачи реализуются в составе приложений и библиотек.', tcpip: 'Прикладной', unit: 'Представление данных' },
+    { n: 7, name: 'Прикладной', short: 'Контекст', purpose: 'Предоставляет сетевые функции приложениям: запрос страницы, отправка сообщения, получение файла. Здесь определяется смысл обмена для пользователя.', example: 'Приложение отправляет HTTP-запрос учебному серверу. HTTP (Hypertext Transfer Protocol) — протокол передачи гипертекста.', tcpip: 'Прикладной', unit: 'Данные приложения' },
+    { n: 6, name: 'Представления', short: 'Контекст', purpose: 'Отвечает за форму представления данных: кодирование, преобразование форматов, согласование синтаксиса. Шифрование и сжатие часто объясняют через функции этого уровня.', example: 'Текст кодируется в UTF-8 (8-bit Unicode Transformation Format — 8-битный формат преобразования Юникода), изображение — в выбранном формате. В TCP/IP эти задачи реализуются в составе приложений и библиотек.', tcpip: 'Прикладной', unit: 'Представление данных' },
     { n: 5, name: 'Сеансовый', short: 'Контекст', purpose: 'Описывает управление диалогом взаимодействующих систем: организацию, поддержание и завершение сеанса, точки синхронизации обмена.', example: 'Участники согласуют этапы длительного обмена. Сеанс OSI не следует автоматически отождествлять с TCP-соединением.', tcpip: 'Прикладной', unit: 'Управление диалогом' },
-    { n: 4, name: 'Транспортный', short: 'Изучаем', purpose: 'Обеспечивает обмен между процессами на конечных устройствах. Протокол определяет свойства сервиса: например, TCP — надёжный поток байтов, UDP — отдельные дейтаграммы без гарантии доставки.', example: 'Номер порта помогает доставить данные нужному приложению на сервере.', tcpip: 'Транспортный', unit: 'TCP-сегмент / UDP-дейтаграмма' },
+    { n: 4, name: 'Транспортный', short: 'Изучаем', purpose: 'Обеспечивает обмен между процессами на конечных устройствах. Протокол определяет свойства сервиса: например, TCP — надёжный поток байтов, UDP (User Datagram Protocol — протокол пользовательских дейтаграмм) — отдельные дейтаграммы без гарантии доставки.', example: 'Номер порта помогает доставить данные нужному приложению на сервере.', tcpip: 'Транспортный', unit: 'TCP-сегмент / UDP-дейтаграмма' },
     { n: 3, name: 'Сетевой', short: 'Изучаем', purpose: 'Обеспечивает адресацию и доставку пакетов через объединение сетей. Маршрутизаторы выбирают следующий участок пути на основе сетевой информации.', example: 'IP-адрес назначения и таблица маршрутизации помогают отправить пакет в сторону учебного сервера.', tcpip: 'Межсетевой', unit: 'Пакет' },
-    { n: 2, name: 'Канальный', short: 'Изучаем', purpose: 'Организует передачу кадров между соседними узлами, доступ к среде и обнаружение ошибок. Конкретные функции, подтверждения и повторы зависят от технологии.', example: 'Wi-Fi согласует использование радиоэфира; MAC-адреса применяются при локальной доставке кадров.', tcpip: 'Канальный / доступ к сети', unit: 'Кадр' },
+    { n: 2, name: 'Канальный', short: 'Изучаем', purpose: 'Организует передачу кадров между соседними узлами, доступ к среде и обнаружение ошибок. Конкретные функции, подтверждения и повторы зависят от технологии.', example: 'Wi-Fi согласует использование радиоэфира; MAC-адреса применяются при локальной доставке кадров. MAC (Media Access Control) означает управление доступом к среде.', tcpip: 'Канальный / доступ к сети', unit: 'Кадр' },
     { n: 1, name: 'Физический', short: 'Изучаем', purpose: 'Определяет передачу битов физическими сигналами: электрическими, оптическими или радиосигналами. Здесь важны модуляция, синхронизация, полоса и свойства среды.', example: 'Передатчик смартфона формирует радиосигнал, который принимает точка доступа.', tcpip: 'Канальный / доступ к сети', unit: 'Биты, представленные сигналом' }
   ];
   const routes = {
@@ -73,5 +103,17 @@
   function signalAt(t) { return (Math.sin(t * 2 * Math.PI * 3) + 0.35 * Math.sin(t * 2 * Math.PI * 7)) / 1.35; }
   function receivedAt(t, noiseSample, sigma, gain, echo) { return gain * signalAt(t) + sigma * noiseSample + (echo && t >= 0.1 ? 0.4 * gain * signalAt(t - 0.1) : 0); }
   function scoreQuiz(answers) { return quiz.reduce((score, item, index) => score + Number(answers[index] === item.answer), 0); }
-  return { chapters, layers, routes, quiz, calculateLink, makeNoise, signalAt, receivedAt, scoreQuiz };
+  function restoreProgress(saved) {
+    const state = { lessonComplete: false, answers: {}, submitted: false };
+    if (!saved || typeof saved !== 'object') return state;
+    state.lessonComplete = typeof saved.lessonComplete === 'boolean' ? saved.lessonComplete :
+      Array.isArray(saved.completed) && chapters.every(id => saved.completed.includes(id));
+    if (saved.answers && typeof saved.answers === 'object') quiz.forEach((question, index) => {
+      const value = saved.answers[index];
+      if (Number.isInteger(value) && value >= 0 && value < question.options.length) state.answers[index] = value;
+    });
+    state.submitted = saved.submitted === true && Object.keys(state.answers).length === quiz.length;
+    return state;
+  }
+  return { chapters, abbreviations, layers, routes, quiz, calculateLink, makeNoise, signalAt, receivedAt, scoreQuiz, restoreProgress };
 });

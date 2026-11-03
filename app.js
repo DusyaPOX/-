@@ -3,19 +3,41 @@
   const M = window.LessonModel;
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const abbreviationMap = new Map(M.abbreviations.map(item => [item.term, item]));
+  const abbreviationPattern = new RegExp('(?<![\\p{L}\\p{N}_])(?:' + M.abbreviations
+    .map(item => item.term).sort((a, b) => b.length - a.length)
+    .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\p{L}\\p{N}_])', 'gu');
+  function annotateAbbreviations(container) {
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.parentElement.closest('abbr,script,style,svg,canvas,code,.glossary')) nodes.push(node);
+    }
+    nodes.forEach(node => {
+      const text = node.textContent;
+      const matches = [...text.matchAll(abbreviationPattern)];
+      if (!matches.length) return;
+      const fragment = document.createDocumentFragment();
+      let offset = 0;
+      matches.forEach(match => {
+        fragment.append(text.slice(offset, match.index));
+        const item = abbreviationMap.get(match[0]);
+        const abbr = document.createElement('abbr');
+        abbr.textContent = item.term;
+        abbr.title = `${item.full} — ${item.meaning}`;
+        fragment.append(abbr);
+        offset = match.index + match[0].length;
+      });
+      fragment.append(text.slice(offset));
+      node.replaceWith(fragment);
+    });
+  }
   const storageKey = 'opisis:lecture-01:v1';
-  let state = { completed: [], answers: {}, submitted: false };
+  let state = M.restoreProgress(null);
   let storageAvailable = true;
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-    if (saved && typeof saved === 'object') {
-      state.completed = Array.isArray(saved.completed) ? [...new Set(saved.completed.filter(id => M.chapters.includes(id)))] : [];
-      if (saved.answers && typeof saved.answers === 'object') M.quiz.forEach((q, i) => {
-        const value = saved.answers[i];
-        if (Number.isInteger(value) && value >= 0 && value < q.options.length) state.answers[i] = value;
-      });
-      state.submitted = saved.submitted === true && Object.keys(state.answers).length === M.quiz.length;
-    }
+    state = M.restoreProgress(JSON.parse(localStorage.getItem(storageKey) || 'null'));
   } catch { storageAvailable = false; }
   function save() {
     try { localStorage.setItem(storageKey, JSON.stringify(state)); }
@@ -23,25 +45,24 @@
     if (!storageAvailable) $('.side-progress p').textContent = 'Сохранение недоступно. Прогресс действует до закрытия страницы.';
   }
   function updateProgress() {
-    const count = state.completed.length;
-    $('#progress-text').textContent = `${count} / ${M.chapters.length}`;
-    $('#progress-fill').style.width = `${count / M.chapters.length * 100}%`;
+    const done = state.lessonComplete;
+    $('#progress-text').textContent = done ? 'Пройдена' : 'Не пройдена';
+    $('#progress-fill').style.width = done ? '100%' : '0%';
+    const count = Number(done);
     $('.progress-track').setAttribute('aria-valuenow', String(count));
-    $$('[data-complete]').forEach(button => {
-      const done = state.completed.includes(button.dataset.complete);
-      button.setAttribute('aria-pressed', String(done));
-      button.innerHTML = `${done ? 'Раздел изучен · снять отметку' : 'Отметить раздел изученным'} <span>✓</span>`;
-    });
+    const button = $('#lesson-complete');
+    button.setAttribute('aria-pressed', String(done));
+    button.setAttribute('aria-label', done ? 'Лекция пройдена. Нажмите, чтобы снять отметку' : 'Лекция пройдена');
+    $('#completion-feedback').textContent = done ? 'Лекция отмечена как пройденная. Повторное нажатие снимет отметку.' : '';
     if (!storageAvailable) $('.side-progress p').textContent = 'Сохранение недоступно. Прогресс действует до закрытия страницы.';
   }
-  $$('[data-complete]').forEach(button => button.addEventListener('click', () => {
-    const id = button.dataset.complete;
-    state.completed = state.completed.includes(id) ? state.completed.filter(item => item !== id) : [...state.completed, id];
+  $('#lesson-complete').addEventListener('click', () => {
+    state.lessonComplete = !state.lessonComplete;
     updateProgress(); save();
-  }));
+  });
   $('#reset-progress').addEventListener('click', () => {
-    if (!window.confirm('Сбросить отметки разделов и ответы самопроверки в этом браузере?')) return;
-    state = { completed: [], answers: {}, submitted: false }; save(); updateProgress(); renderQuiz();
+    if (!window.confirm('Сбросить отметку о прохождении лекции и ответы самопроверки в этом браузере?')) return;
+    state = M.restoreProgress(null); save(); updateProgress(); renderQuiz();
   });
   updateProgress();
 
@@ -63,6 +84,8 @@
     $('#route-step-label').textContent = `ЭТАП ${String(step + 1).padStart(2, '0')}`;
     $('#route-step-title').textContent = current.title;
     $('#route-step-description').textContent = current.description;
+    annotateAbbreviations($('#route-step-title'));
+    annotateAbbreviations($('#route-step-description'));
     $('#route-counter').textContent = `${step + 1} / ${selected.steps.length}`;
     $('#route-prev').disabled = step === 0;
     $('#route-next').disabled = step === selected.steps.length - 1;
@@ -81,6 +104,7 @@
     const current = M.layers.find(item => item.n === layer);
     $('#osi-stack').innerHTML = M.layers.map(item => `<button type="button" data-layer="${item.n}" class="${item.n === layer ? 'selected' : ''}" aria-pressed="${item.n === layer}"><span>${item.n}</span>${item.name}<small>${item.short}</small></button>`).join('');
     $('#osi-detail').innerHTML = `<span class="small-label">УРОВЕНЬ ${current.n} / OSI</span><h3>${current.name}</h3><p>${current.purpose}</p><div class="osi-example"><b>В НАШЕМ ПРИМЕРЕ</b><p>${current.example}</p></div><p><strong>Единица / представление:</strong> ${current.unit}</p><span class="tcpip-tag">TCP/IP → ${current.tcpip}</span>`;
+    annotateAbbreviations($('#osi-detail'));
   }
   $('#osi-stack').addEventListener('click', event => {
     const button = event.target.closest('[data-layer]');
@@ -103,20 +127,21 @@
     canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, width, height);
     const pad = 33, right = width - 15, mid = height / 2, scale = (height - 55) / 6;
-    ctx.lineWidth = 1; ctx.strokeStyle = '#e1e6d7';
+    ctx.lineWidth = 1; ctx.strokeStyle = '#d7e0ec';
     for (let i = -2; i <= 2; i++) {
       const y = mid - i * scale; ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(right, y); ctx.stroke();
-      ctx.font = '9px Consolas, monospace'; ctx.fillStyle = '#839172'; ctx.fillText(String(i), 12, y + 3);
+      ctx.font = '11px Consolas, monospace'; ctx.fillStyle = '#687d9b'; ctx.fillText(String(i), 12, y + 3);
     }
     for (let i = 0; i <= 10; i++) { const x = pad + (right - pad) * i / 10; ctx.beginPath(); ctx.moveTo(x, 18); ctx.lineTo(x, height - 22); ctx.stroke(); }
-    ctx.fillStyle = '#839172'; ctx.fillText('ампл.', 9, 12); ctx.fillText('время, усл. ед.', Math.max(pad, width - 105), height - 5);
-    const trace = (color, sample, lineWidth) => {
-      ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.beginPath();
+    ctx.fillStyle = '#687d9b'; ctx.fillText('ампл.', 9, 12); ctx.fillText('время, усл. ед.', Math.max(pad, width - 105), height - 5);
+    const trace = (color, sample, lineWidth, dash = []) => {
+      ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.setLineDash(dash); ctx.beginPath();
       noiseSamples.forEach((noise, i) => { const t = i / (noiseSamples.length - 1), x = pad + t * (right - pad), y = mid - sample(t, noise) * scale; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
-      ctx.stroke();
+      ctx.stroke(); ctx.setLineDash([]);
     };
-    trace('#879a73', t => M.signalAt(t), 2);
-    trace('#cd5d38', (t, noise) => M.receivedAt(t, noise, sigma, gain, echo), 1.35);
+    const palette = getComputedStyle(document.documentElement);
+    trace(palette.getPropertyValue('--signal-purple').trim(), (t, noise) => M.receivedAt(t, noise, sigma, gain, echo), 1.8);
+    trace(palette.getPropertyValue('--signal-blue').trim(), t => M.signalAt(t), 2.4, [7, 4]);
     const notes = [];
     notes.push(sigma === 0 ? 'Добавленный шум отсутствует.' : `Шум: σ = ${sigma.toFixed(2).replace('.', ',')}.`);
     notes.push(gain === 1 ? 'Основной луч не ослаблен.' : `Амплитуда основного луча составляет ${Math.round(gain * 100)}% исходной.`);
@@ -148,16 +173,17 @@
     if (technology === 'ofdm') {
       const curves = [0, 1, 2, 3].map((_, i) => {
         const center = 40 + i * 45;
-        return `<path d="M${center - 40} 125 Q${center - 25} 125 ${center - 17} 100 Q${center} 15 ${center + 17} 100 Q${center + 25} 125 ${center + 40} 125" fill="none" stroke="${i % 2 ? '#c4643e' : '#5a7c4f'}" stroke-width="2"/>`;
+        return `<path d="M${center - 40} 125 Q${center - 25} 125 ${center - 17} 100 Q${center} 15 ${center + 17} 100 Q${center + 25} 125 ${center + 40} 125" fill="none" stroke="${i % 2 ? 'var(--signal-purple)' : 'var(--signal-blue)'}" stroke-width="2.5" stroke-dasharray="${i % 2 ? 'none' : '6 3'}"/>`;
       }).join('');
-      return `<svg viewBox="0 0 230 160" role="img" aria-label="Схематичные перекрывающиеся спектры поднесущих"><path d="M10 125h205" stroke="#829772"/>${curves}<text x="16" y="149">поднесущие → частота</text></svg>`;
+      return `<svg viewBox="0 0 230 160" role="img" aria-label="Схематичные перекрывающиеся спектры поднесущих"><path d="M10 125h205" stroke="#6c809d"/>${curves}<text x="16" y="149">поднесущие → частота</text></svg>`;
     }
-    return '<svg viewBox="0 0 230 160" role="img" aria-label="Несколько антенн передатчика и приёмника, связанных разными путями"><g fill="none" stroke="#a5b494" stroke-dasharray="4 4"><path d="M40 40L190 40M40 120L190 120M40 40L190 120M40 120L190 40"/></g><g fill="#eaf0dd" stroke="#4c6a40" stroke-width="2"><circle cx="40" cy="40" r="13"/><circle cx="40" cy="120" r="13"/><circle cx="190" cy="40" r="13"/><circle cx="190" cy="120" r="13"/></g><path d="M54 40L176 40M54 120L176 120" stroke="#c4643e" stroke-width="2"/><text x="27" y="84">TX</text><text x="179" y="84">RX</text></svg>';
+    return '<svg viewBox="0 0 230 160" role="img" aria-label="Несколько антенн передатчика и приёмника, связанных разными путями"><g fill="none" stroke="#92a1b6" stroke-dasharray="4 4"><path d="M40 40L190 40M40 120L190 120M40 40L190 120M40 120L190 40"/></g><g fill="#e2e8f1" stroke="var(--signal-blue)" stroke-width="2"><circle cx="40" cy="40" r="13"/><circle cx="40" cy="120" r="13"/><circle cx="190" cy="40" r="13"/><circle cx="190" cy="120" r="13"/></g><path d="M54 40L176 40M54 120L176 120" stroke="var(--signal-purple)" stroke-width="2"/><text x="27" y="84">TX</text><text x="179" y="84">RX</text></svg>';
   }
   function renderTechnology(technology) {
     const ofdm = technology === 'ofdm';
-    $('#technology-content').innerHTML = `<div class="tech-display"><div class="tech-picture">${technologyPicture(technology)}</div><div><h3>${ofdm ? 'Много поднесущих — один поток' : 'Несколько антенн — больше возможностей'}</h3><p>${ofdm ? 'OFDM распределяет данные между ортогональными поднесущими и передаёт их параллельно. В идеальных условиях приёмник разделяет поднесущие, даже когда их спектры перекрываются. В системах с циклическим префиксом он помогает обрабатывать многолучевой канал, если его длительности достаточно.' : 'MIMO использует несколько передающих и приёмных антенн. Это позволяет повысить надёжность за счёт разнесения, передавать разные пространственные потоки или формировать лучи. Возможный выигрыш зависит от канала: добавление антенн само по себе не гарантирует пропорционального роста скорости.'}</p><p class="tech-context">${ofdm ? 'Задача: передача в частотно-селективном канале. Подробнее — лекция 4.' : 'Задача: использование пространственных свойств канала. Подробнее — лекция 4.'}</p></div></div><p class="lab-note">${ofdm ? 'Спектры на рисунке схематичны: их форма не является расчётом ортогональности. OFDM — не способ адресации и не самостоятельная гарантия отсутствия помех.' : 'Линии условно показывают связи между антеннами. Это не рассчитанная диаграмма направленности. MIMO и OFDM могут использоваться совместно.'}</p>`;
+    $('#technology-content').innerHTML = `<div class="tech-display"><div class="tech-picture">${technologyPicture(technology)}</div><div><h3>${ofdm ? 'OFDM: ортогональные поднесущие' : 'MIMO: пространственная обработка'}</h3><p>${ofdm ? 'OFDM распределяет данные между ортогональными поднесущими и передаёт их параллельно. В идеальных условиях приёмник разделяет поднесущие, даже когда их спектры перекрываются. В системах с циклическим префиксом он помогает обрабатывать многолучевой канал, если его длительности достаточно.' : 'MIMO использует несколько передающих и приёмных антенн. Это позволяет повысить надёжность за счёт разнесения, передавать разные пространственные потоки или формировать лучи. Возможный выигрыш зависит от канала: добавление антенн само по себе не гарантирует пропорционального роста скорости.'}</p><p class="tech-context">${ofdm ? 'Задача: передача в частотно-селективном канале. Подробнее — лекция 4.' : 'Задача: использование пространственных свойств канала. Подробнее — лекция 4.'}</p></div></div><p class="lab-note">${ofdm ? 'Спектры на рисунке схематичны: их форма не является расчётом ортогональности. OFDM — не способ адресации и не самостоятельная гарантия отсутствия помех.' : 'Линии условно показывают связи между антеннами. Это не рассчитанная диаграмма направленности. MIMO и OFDM могут использоваться совместно.'}</p>`;
     $$('[data-tech]').forEach(button => { button.classList.toggle('selected', button.dataset.tech === technology); button.setAttribute('aria-pressed', String(button.dataset.tech === technology)); });
+    annotateAbbreviations($('#technology-content'));
   }
   $$('[data-tech]').forEach(button => button.addEventListener('click', () => renderTechnology(button.dataset.tech)));
   renderTechnology('ofdm');
@@ -166,6 +192,7 @@
     $('#quiz-questions').innerHTML = M.quiz.map((item, index) => `<fieldset class="quiz-question"><legend><span class="question-number">${String(index + 1).padStart(2, '0')}</span>${item.question}</legend><div class="quiz-options">${item.options.map((option, optionIndex) => `<label><input type="radio" name="q${index}" value="${optionIndex}" ${state.answers[index] === optionIndex ? 'checked' : ''}><span>${option}</span></label>`).join('')}</div><p class="quiz-feedback" id="feedback-${index}" hidden></p></fieldset>`).join('');
     $('#quiz-result').hidden = true;
     if (state.submitted) showQuizResult(false);
+    annotateAbbreviations($('#quiz-questions'));
   }
   $('#quiz').addEventListener('change', event => {
     if (!event.target.matches('input[type=radio]')) return;
@@ -189,9 +216,10 @@
       const feedback = $(`#feedback-${index}`);
       feedback.hidden = false; feedback.classList.toggle('wrong', !correct);
       feedback.textContent = `${correct ? 'Верно.' : 'Нужно повторить.'} ${item.explanation}`;
+      annotateAbbreviations(feedback);
       $$(`input[name="q${index}"]`).forEach(input => { input.closest('label').classList.toggle('correct', Number(input.value) === item.answer); input.closest('label').classList.toggle('incorrect', input.checked && !correct); });
     });
-    result.innerHTML = `<strong>${score} из ${M.quiz.length} — ${score >= 8 ? 'основная картина сложилась' : 'есть темы для повторения'}</strong><span>${score === M.quiz.length ? 'Все ответы верны. Попробуйте теперь своими словами объяснить весь путь сообщения.' : 'Разберите объяснения под вопросами, вернитесь к соответствующим разделам и попробуйте ещё раз.'}</span>`;
+    result.innerHTML = `<strong>${score} из ${M.quiz.length} — ${score >= 8 ? 'основные понятия усвоены' : 'есть темы для повторения'}</strong><span>${score === M.quiz.length ? 'Все ответы верны. Объясните своими словами последовательность передачи сообщения.' : 'Изучите пояснения к ответам и повторите соответствующие разделы.'}</span>`;
     state.submitted = true; save();
     if (focus) result.focus();
   }
@@ -225,4 +253,5 @@
   window.addEventListener('beforeprint', () => { printOpenDetails = $$('details:not([open])'); printOpenDetails.forEach(item => { item.open = true; }); });
   window.addEventListener('afterprint', () => { printOpenDetails.forEach(item => { item.open = false; }); });
   $('#print-button').addEventListener('click', () => window.print());
+  annotateAbbreviations(document.body);
 })();
