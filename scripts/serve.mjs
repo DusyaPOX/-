@@ -13,7 +13,7 @@ const server = http.createServer(async (req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     // Serve only the public lesson assets, never .git or project internals.
     const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-    const allowed = ['index.html', 'styles.css', 'app.js', 'lesson-model.js', 'assets/favicon.svg'];
+    const allowed = ['index.html', 'styles.css', 'app.js', 'lesson-model.js', 'assets/favicon.svg', 'lecture-02.html', 'lecture-02.css', 'lecture-02.js', 'lecture-02-model.js'];
     if (!allowed.includes(relative)) { res.writeHead(404); res.end('Not found'); return; }
     const file = path.join(root, relative);
     if (!(await stat(file)).isFile()) throw new Error('Not a file');

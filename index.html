@@ -7,7 +7,7 @@
   <meta name="description" content="Интерактивная лекция 1 по основам построения информационных систем и сетей: система связи, канал, OSI, TCP/IP и качество передачи.">
   <title>Лекция 01 · От сообщения к сигналу — ОПИСиС</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
   <script src="lesson-model.js?v=4" defer></script>
   <script src="app.js?v=4" defer></script>
 </head>
@@ -19,7 +19,7 @@
   <div class="course-label">ПРОГРАММА КУРСА <span>01 / 08</span></div>
   <ol class="course-list">
     <li class="current"><a href="#top" aria-current="page"><span>01</span>Введение в системы<br>и сети связи<span class="current-dot" aria-hidden="true"></span></a></li>
-    <li><span>02</span>Формирование сигнала<small>Скоро</small></li>
+    <li class="available"><a href="lecture-02.html"><span>02</span>Формирование сигнала</a></li>
     <li><span>03</span>Физические каналы<small>Скоро</small></li>
     <li><span>04</span>Технологии передачи<small>Скоро</small></li>
     <li><span>05</span>Приём информации<small>Скоро</small></li>
@@ -112,7 +112,7 @@
 
     <section class="reference-section" id="glossary"><span class="section-number">ПОД РУКОЙ</span><h2>Основные термины</h2><dl class="glossary"><div><dt>Бит</dt><dd>Двоичная единица данных: 0 или 1.</dd></div><div><dt>Символ</dt><dd>Выбранное состояние сигнала, которое может представлять один или несколько битов.</dd></div><div><dt>Кадр / пакет</dt><dd>Единицы данных канального и сетевого уровней соответственно.</dd></div><div><dt>Протокол</dt><dd>Правила формата, смысла и порядка обмена сообщениями между участниками.</dd></div><div><dt>MAC / IP</dt><dd>Адресация интерфейсов для локальной доставки кадров / межсетевой доставки пакетов.</dd></div><div><dt>DL / UL</dt><dd>Направления: от базовой станции к устройству / от устройства к базовой станции.</dd></div><div><dt>Модуляция</dt><dd>Отображение данных в параметры передаваемого сигнала.</dd></div><div><dt>Эквализация</dt><dd>Компенсация искажений канала на приёме; она не обязательно уменьшает шум.</dd></div></dl><details><summary>Источники и дальнейшее чтение</summary><ul class="sources"><li><a href="https://www.itu.int/rec/T-REC-X.200-199407-I/en" target="_blank" rel="noopener noreferrer">ITU-T X.200 — эталонная модель OSI (ITU-T: International Telecommunication Union — Telecommunication Standardization Sector, сектор стандартизации электросвязи Международного союза электросвязи) ↗</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc1122" target="_blank" rel="noopener noreferrer">RFC 1122 — архитектура уровней Интернета (RFC: Request for Comments — запрос комментариев) ↗</a></li><li><a href="https://www.mathworks.com/discovery/ofdm.html" target="_blank" rel="noopener noreferrer">MathWorks — принципы OFDM ↗</a></li><li><a href="https://www.mathworks.com/help/comm/ug/multiple-input-multiple-output-mimo.html" target="_blank" rel="noopener noreferrer">MathWorks — методы MIMO ↗</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc3629" target="_blank" rel="noopener noreferrer">RFC 3629 — формат кодирования UTF-8 ↗</a></li><li><a href="https://www.etsi.org/technical-groups/mat/" target="_blank" rel="noopener noreferrer">Европейский институт телекоммуникационных стандартов — терминология множественного доступа ↗</a></li><li><a href="https://www.hpe.com/hk/en/what-is/wi-fi.html" target="_blank" rel="noopener noreferrer">Hewlett Packard Enterprise — название Wi-Fi ↗</a></li></ul><p>Материал — вводное учебное изложение. Примеры и численные параметры иллюстративны; для проектирования систем нужны спецификации выбранной технологии.</p></details></section>
     <section class="lesson-completion" aria-labelledby="completion-heading"><h2 id="completion-heading">Завершение лекции</h2><p>После изучения материала и самопроверки отметьте лекцию как пройденную.</p><button class="complete-button" id="lesson-complete" type="button" aria-pressed="false">Лекция пройдена <span>✓</span></button><p id="completion-feedback" class="completion-feedback" role="status"></p></section>
-    <section class="lesson-end"><span class="small-label">ДАЛЬШЕ ПО КУРСУ</span><h2>Как биты становятся сигналом</h2><p>Лекция 02 · Кодирование, модуляция и передающий тракт</p><span class="coming-soon">Готовится к публикации</span><a href="#top">Вернуться к началу ↑</a></section>
+    <section class="lesson-end"><span class="small-label">ДАЛЬШЕ ПО КУРСУ</span><h2>Как биты становятся сигналом</h2><p>Лекция 02 · Кодирование, модуляция и передающий тракт</p><a class="primary-button next-lecture" href="lecture-02.html">Открыть лекцию 02 →</a><a href="#top">Вернуться к началу ↑</a></section>
   </main><footer><span>ОПИСиС <span class="footer-divider">/</span> Лекция 01</span><span>Основы цифровой передачи данных.</span><button id="reset-progress" class="text-button" type="button">Сбросить прогресс</button></footer>
 </div><noscript><div class="noscript">Текст лекции доступен без JavaScript. Для интерактивов и самопроверки включите JavaScript в браузере.</div></noscript>
 </body>
